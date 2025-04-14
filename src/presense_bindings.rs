@@ -32,12 +32,14 @@ pub struct GameStateStruct {
     pub servergamestate: SVGameState,
     pub fd_wavenumber: i32,
     pub fd_totalwaves: i32,
+    pub is_vanilla: bool,
 }
 
 #[derive(PushToSquirrelVm, GetFromSquirrelVm, Default, Clone)]
 /// binding to UIPresenceStruct
 pub struct UIPresenceStruct {
     pub game_state: GameState,
+    pub is_vanilla: bool,
 }
 
 impl Default for GameState {

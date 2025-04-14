@@ -61,7 +61,7 @@ impl Plugin for DiscordRpcPlugin {
         unsafe { register_interface("InviteHandler001", InviteHandler::new()) };
 
         let activity = Mutex::new(ActivityData {
-            large_image: Some("northstar".to_string()),
+            large_image: Some("titanfallbig".to_string()),
             state: "Loading...".to_string(),
             ..Default::default()
         });
