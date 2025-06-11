@@ -86,7 +86,6 @@ pub enum IniviteHandlerResult {
 
 fn ExecuteConCommad(cmd: &str) -> Result<(), String> {
     let cmd = to_cstring(&cmd);
-    log::info!("Executing command: {}", cmd.to_string_lossy());
     unsafe {
         (ENGINE_FUNCTIONS.wait().cbuf_add_text_type)(
             ECommandTarget::FirstPlayer,
@@ -172,8 +171,6 @@ extern "C" fn default_join_handler(_secret: *const c_char) {
             return;
         }
     };
-
-    log::info!("Join request received with secret: {}", secret);
     ExecuteConCommad(&format!("ns_join_room {}\n", secret)).unwrap_or_else(|err|
         log::error!("Failed to execute join command: {}\n", err)
     );
