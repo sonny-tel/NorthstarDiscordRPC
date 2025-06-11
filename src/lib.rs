@@ -6,6 +6,7 @@ use rrplug::prelude::*;
 use rrplug::{bindings::plugin_abi::PluginColor, interfaces::manager::register_interface};
 use tokio::runtime::Runtime;
 
+use crate::invite_handler::{EngineFunctions, ENGINE_FUNCTIONS};
 use crate::{
     discord::async_main,
     invite_handler::InviteHandler,
@@ -79,6 +80,17 @@ impl Plugin for DiscordRpcPlugin {
             presence_data: Mutex::new((GameStateStruct::default(), UIPresenceStruct::default())),
             invite_handler: Mutex::new(InviteHandler::new()),
         }
+    }
+
+    fn on_dll_load(
+            &self,
+            _engine_data: Option<&EngineData>,
+            _dll_ptr: &DLLPointer,
+            _engine_token: EngineToken,
+        ) {
+        log::info!("Discord RPC plugin loaded successfully!");
+            unsafe { EngineFunctions::try_init(_dll_ptr, &ENGINE_FUNCTIONS) };
+
     }
 
     fn on_sqvm_created(&self, sqvm_handle: &CSquirrelVMHandle, _: EngineToken) {

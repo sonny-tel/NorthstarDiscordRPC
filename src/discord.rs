@@ -3,16 +3,18 @@
 use std::num::NonZeroU32;
 
 use discord_sdk::{
-    activity::{events::ActivityEvent, ActivityBuilder, Assets, JoinRequestReply, PartyPrivacy},
+    activity::{ events::ActivityEvent, ActivityBuilder, Assets, JoinRequestReply, PartyPrivacy },
     user::User,
     wheel::UserState,
     wheel::Wheel,
-    Discord, DiscordApp, Subscriptions,
+    Discord,
+    DiscordApp,
+    Subscriptions,
 };
-use rrplug::{mid::utils::try_cstring, prelude::*};
+use rrplug::{ mid::utils::try_cstring, prelude::* };
 use tokio::sync::broadcast::Receiver;
 
-use crate::{exports::PLUGIN, invite_handler::JOIN_HANDLER_FUNCTION};
+use crate::{ exports::PLUGIN, invite_handler::JOIN_HANDLER_FUNCTION };
 
 /// the discord app's id, taken from older v1 discord rpc
 const APP_ID: i64 = 1360889256108621919;
@@ -77,7 +79,7 @@ pub async fn async_main() {
                 "whar",
                 Some(party.0.try_into().unwrap_or(NonZeroU32::new(1).unwrap())),
                 Some(party.1.try_into().unwrap_or(NonZeroU32::new(1).unwrap())),
-                PartyPrivacy::Private,
+                PartyPrivacy::Private
             );
         }
 
@@ -96,20 +98,21 @@ pub async fn async_main() {
 
 async fn handle_activity_events(
     events: &mut Receiver<ActivityEvent>,
-    discord: &Discord,
+    discord: &Discord
 ) -> Option<()> {
     match events.try_recv().ok()? {
         ActivityEvent::Join(join) => {
             log::info!("invite proccessing");
             let secret = try_cstring(&join.secret).expect("I like null bytes in my strings cool");
-            JOIN_HANDLER_FUNCTION.lock()(secret.as_ptr())
+            JOIN_HANDLER_FUNCTION.lock()(secret.as_ptr());
+        }
+        ActivityEvent::Invite(invite) => {
+            log::info!("invite received: {:#?}", invite);
         }
         ActivityEvent::Spectate(_) => log::warn!("spectating cannot be supported!"),
         ActivityEvent::JoinRequest(request) => {
             log::info!("{} joined the party", request.user.username);
-            _ = discord
-                .send_join_request_reply(request.user.id, JoinRequestReply::Yes)
-                .await;
+            _ = discord.send_join_request_reply(request.user.id, JoinRequestReply::Yes).await;
         }
         _ => {}
     }
@@ -119,9 +122,11 @@ async fn handle_activity_events(
 
 /// discord connection init sourced from https://github.com/EmbarkStudios/discord-sdk/blob/d311db749b7e11cc55cb1a9d7bfd9a95cfe61fd1/examples-shared/src/lib.rs#L16
 pub async fn make_client(subs: Subscriptions) -> Result<Client, ()> {
-    let (wheel, handler) = Wheel::new(Box::new(|err| {
-        log::warn!("encountered an error {err:?}; shouldn't be fatal");
-    }));
+    let (wheel, handler) = Wheel::new(
+        Box::new(|err| {
+            log::warn!("encountered an error {err:?}; shouldn't be fatal");
+        })
+    );
 
     let mut user = wheel.user();
 

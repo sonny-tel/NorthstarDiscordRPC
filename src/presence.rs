@@ -3,25 +3,25 @@
 use rrplug::mid::squirrel::sqvm_to_context;
 use rrplug::prelude::*;
 use rrplug::{
-    bindings::squirrelclasstypes::ScriptContext, call_sq_function, high::squirrel::compile_string,
+    bindings::squirrelclasstypes::ScriptContext,
+    call_sq_function,
+    high::squirrel::compile_string,
 };
 use std::ptr::NonNull;
-use std::{
-    ops::DerefMut,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{ ops::DerefMut, time::{ SystemTime, UNIX_EPOCH } };
 
-use crate::presense_bindings::{GameState, GameStateStruct, SVGameState, UIPresenceStruct};
+use crate::presense_bindings::{ GameState, GameStateStruct, SVGameState, UIPresenceStruct };
 
 // heartbeat for pulling presence
 pub fn run_presence_updates(sqvm: NonNull<HSquirrelVM>) {
     let sq_functions = SQFUNCTIONS.client.wait();
 
-    if let Err(err) = compile_string(
-        sqvm,
-        sq_functions,
-        true,
-        r#"
+    if
+        let Err(err) = compile_string(
+            sqvm,
+            sq_functions,
+            true,
+            r#"
     thread void function() {
         wait 1
         for(;;) {
@@ -29,8 +29,9 @@ pub fn run_presence_updates(sqvm: NonNull<HSquirrelVM>) {
             wait 1
         }
     }()
-    "#,
-    ) {
+    "#
+        )
+    {
         err.log()
     };
 }
@@ -47,30 +48,37 @@ pub fn fetch_presence() -> Result<(), String> {
 
     match context {
         ScriptContext::CLIENT => {
-            if let Err(err) = call_sq_function!(
-                sqvm,
-                sq_functions,
-                "DiscordRPC_GenerateGameState",
-                cl_presence.clone()
-            ) {
+            if
+                let Err(err) = call_sq_function!(
+                    sqvm,
+                    sq_functions,
+                    "DiscordRPC_GenerateGameState",
+                    cl_presence.clone()
+                )
+            {
                 #[cfg(debug_assertions)]
                 log::warn!("DiscordRPC_GenerateGameState call failed : {err}");
                 #[cfg(not(debug_assertions))]
                 drop(err);
             } else {
-                *cl_presence =
-                    GameStateStruct::get_from_sqvm(sqvm, SQFUNCTIONS.client.wait(), unsafe {
+                *cl_presence = GameStateStruct::get_from_sqvm(
+                    sqvm,
+                    SQFUNCTIONS.client.wait(),
+                    unsafe {
                         sqvm.as_ref()._stackbase
-                    });
+                    }
+                );
             }
         }
         ScriptContext::UI => {
-            match call_sq_function!(
-                sqvm,
-                sq_functions,
-                "DiscordRPC_GenerateUIPresence",
-                ui_presence.clone()
-            ) {
+            match
+                call_sq_function!(
+                    sqvm,
+                    sq_functions,
+                    "DiscordRPC_GenerateUIPresence",
+                    ui_presence.clone()
+                )
+            {
                 Err(err) => {
                     #[cfg(debug_assertions)]
                     log::warn!("DiscordRPC_GenerateUIPresence call failed : {err}");
@@ -78,10 +86,13 @@ pub fn fetch_presence() -> Result<(), String> {
                     drop(err);
                 }
                 Ok(_) => {
-                    *ui_presence =
-                        UIPresenceStruct::get_from_sqvm(sqvm, SQFUNCTIONS.client.wait(), unsafe {
+                    *ui_presence = UIPresenceStruct::get_from_sqvm(
+                        sqvm,
+                        SQFUNCTIONS.client.wait(),
+                        unsafe {
                             sqvm.as_ref()._stackbase
-                        });
+                        }
+                    );
                 }
             }
         }
@@ -97,16 +108,13 @@ pub fn fetch_presence() -> Result<(), String> {
 fn on_presence_updated(
     plugin: &crate::DiscordRpcPlugin,
     cl_presence: &GameStateStruct,
-    ui_presence: &UIPresenceStruct,
+    ui_presence: &UIPresenceStruct
 ) {
     let mut activity = plugin.activity.lock();
 
     if activity.last_state != ui_presence.game_state {
         activity.start = Some(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs() as i64,
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64
         );
         activity.last_state = ui_presence.game_state;
     }
@@ -172,24 +180,23 @@ fn on_presence_updated(
                 activity.party = None;
                 activity.end = None;
             } else if cl_presence.playlist == "fd" {
-                cl_presence
-                    .playlist_displayname
-                    .clone_into(&mut activity.state);
+                cl_presence.playlist_displayname.clone_into(&mut activity.state);
                 if cl_presence.fd_wavenumber == -1 {
                     activity.details = "On Wave Break".to_string();
                 } else {
                     activity.details = format!(
                         "Wave: {} of {}",
-                        cl_presence.fd_wavenumber, cl_presence.fd_totalwaves
+                        cl_presence.fd_wavenumber,
+                        cl_presence.fd_totalwaves
                     );
                 }
             } else {
-                cl_presence
-                    .playlist_displayname
-                    .clone_into(&mut activity.state);
+                cl_presence.playlist_displayname.clone_into(&mut activity.state);
                 activity.details = format!(
                     "Score: {} - {} (First to {})",
-                    cl_presence.own_score, cl_presence.other_highest_score, cl_presence.max_score,
+                    cl_presence.own_score,
+                    cl_presence.other_highest_score,
+                    cl_presence.max_score
                 );
 
                 if activity.end.is_none() {
@@ -203,18 +210,19 @@ fn on_presence_updated(
             }
             // This will override previous details established whenever server is not in the Playing gamestate, so friends can see at which stage a match currently is
             if cl_presence.servergamestate != SVGameState::Playing {
-                activity.details = match cl_presence.servergamestate {
-                    SVGameState::WaitingForPlayers => "Waiting Players to Load",
-                    SVGameState::PickLoadout => "Titan Selection",
-                    SVGameState::Prematch => "Match Starting",
-                    SVGameState::SuddenDeath => "In Sudden Death",
-                    SVGameState::SwitchingSides => "Switching Sides",
-                    SVGameState::WinnerDetermined => "Winner Determined",
-                    SVGameState::Epilogue => "In Epilogue",
-                    SVGameState::Postmatch => "Match Ending",
-                    _ => "",
-                }
-                .to_string();
+                activity.details = (
+                    match cl_presence.servergamestate {
+                        SVGameState::WaitingForPlayers => "Waiting Players to Load",
+                        SVGameState::PickLoadout => "Titan Selection",
+                        SVGameState::Prematch => "Match Starting",
+                        SVGameState::SuddenDeath => "In Sudden Death",
+                        SVGameState::SwitchingSides => "Switching Sides",
+                        SVGameState::WinnerDetermined => "Winner Determined",
+                        SVGameState::Epilogue => "In Epilogue",
+                        SVGameState::Postmatch => "Match Ending",
+                        _ => "",
+                    }
+                ).to_string();
             }
         }
     };
