@@ -1,6 +1,16 @@
 use parking_lot::Mutex;
 use std::ffi::{c_char, CStr};
 
+use rrplug::prelude::*;
+use rrplug::{
+    bindings::squirrelclasstypes::ScriptContext, call_sq_function, high::squirrel::compile_string,
+};
+
+use std::{
+    ops::DerefMut,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
 use crate::PLUGIN;
 
 pub static JOIN_HANDLER_FUNCTION: Mutex<JoinHandler> = Mutex::new(default_join_handler);
@@ -18,11 +28,8 @@ pub enum IniviteHandlerResult {
     NonUtf8Secret,
 }
 
-/// registered as "InviteHandler001"
-#[repr(C)]
-pub(crate) struct InviteHandler;
+pub struct InviteHandler;
 
-#[rrplug::as_interface]
 impl InviteHandler {
     pub fn new() -> Self {
         Self
@@ -59,6 +66,32 @@ impl InviteHandler {
         secrets.join = None;
         secrets.spectate = None;
     }
+}
+
+#[rrplug::sqfunction(VM = "UI", ExportName = "ClearJoinSecret")]
+pub fn clear_secret() -> Result<(), String> {
+    let plugin = crate::PLUGIN.wait();
+    let mut invite_lock = plugin.invite_handler.lock();
+    let invite_handler = invite_lock.deref_mut();
+
+    invite_handler.clear_secret();
+
+    Ok(())
+}
+
+#[rrplug::sqfunction(VM = "UI", ExportName = "SetJoinSecret")]
+pub fn set_secret(secret: String) -> Result<(), String> {
+    let plugin = crate::PLUGIN.wait();
+    let mut invite_lock = plugin.invite_handler.lock();
+    let invite_handler = invite_lock.deref_mut();
+
+    invite_handler.set_secret(
+        std::ffi::CString::new(secret)
+            .map_err(|_| "Failed to convert secret to CString".to_string())?
+            .as_ptr(),
+    );
+
+    Ok(())
 }
 
 extern "C" fn default_join_handler(_secret: *const c_char) {}

@@ -39,6 +39,7 @@ pub struct ActivityData {
 pub struct DiscordRpcPlugin {
     pub activity: Mutex<ActivityData>,
     pub presence_data: Mutex<(GameStateStruct, UIPresenceStruct)>,
+    pub invite_handler: Mutex<InviteHandler>,
 }
 
 #[deny(non_snake_case)]
@@ -57,8 +58,8 @@ impl Plugin for DiscordRpcPlugin {
 
     fn new(_: bool) -> Self {
         register_sq_functions(presence::fetch_presence);
-
-        unsafe { register_interface("InviteHandler001", InviteHandler::new()) };
+        register_sq_functions(invite_handler::clear_secret);
+        register_sq_functions(invite_handler::set_secret);
 
         let activity = Mutex::new(ActivityData {
             large_image: Some("titanfallbig".to_string()),
@@ -76,6 +77,7 @@ impl Plugin for DiscordRpcPlugin {
         Self {
             activity,
             presence_data: Mutex::new((GameStateStruct::default(), UIPresenceStruct::default())),
+            invite_handler: Mutex::new(InviteHandler::new()),
         }
     }
 
