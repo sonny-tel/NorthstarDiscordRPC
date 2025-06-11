@@ -160,7 +160,6 @@ pub fn set_secret(secret: String) -> Result<(), String> {
             .map_err(|_| "Failed to convert secret to CString".to_string())?
             .as_ptr()
     );
-
     Ok(())
 }
 
