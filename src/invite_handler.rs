@@ -177,7 +177,7 @@ extern "C" fn default_join_handler(_secret: *const c_char) {
         }
     };
 
-    let is_northstar = secret.starts_with("n")
+    let is_northstar = secret.starts_with("n");
     let is_vanilla = secret.starts_with("v");
 
     if !is_northstar && !is_vanilla {
@@ -191,18 +191,18 @@ extern "C" fn default_join_handler(_secret: *const c_char) {
         secret.trim_start_matches("v:")
     };
 
-    if value.contains(';') {
+    if secret.contains(';') {
         log::error!("Invalid join secret value: {}", value);
         return;
     }
 
     if is_vanilla {
-        ExecuteConCommand(&format!("ns_join_room {}\n", value)).unwrap_or_else(|err|
-            log::error!("Failed to execute join command: {}\n", err)
-        );
+        ExecuteConCommand(&format!("ns_join_room {}\n", value)).unwrap_or_else(|err| {
+            log::error!("Failed to execute join command: {}\n", err);
+        });
     } else if is_northstar {
         log::error!("Joining Northstar servers is not supported yet: {}", value);
     } else {
-        log::error!("Unknown join secret type: {}", secret);
+        log::error!("Unknown join secret type: {}", value);
     }
 }
