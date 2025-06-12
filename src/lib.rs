@@ -3,27 +3,28 @@
 use discord_sdk::activity::Secrets;
 use parking_lot::Mutex;
 use rrplug::prelude::*;
-use rrplug::{bindings::plugin_abi::PluginColor, interfaces::manager::register_interface};
+use rrplug::{bindings::plugin_abi::PluginColor};
 use tokio::runtime::Runtime;
 
-use crate::invite_handler::{EngineFunctions, ENGINE_FUNCTIONS};
 use crate::{
     discord::async_main,
     invite_handler::InviteHandler,
     presence::run_presence_updates,
     presense_bindings::{GameState, GameStateStruct, UIPresenceStruct},
+    engine::{EngineFunctions, ENGINE_FUNCTIONS},
 };
 
 pub(crate) mod discord;
 pub(crate) mod invite_handler;
 pub(crate) mod presence;
 pub(crate) mod presense_bindings;
+pub(crate) mod engine;
 
 #[deny(non_snake_case)]
 #[derive(Debug, Default, Clone)]
 #[doc = "struct for all the possible information on the rpc"]
 pub struct ActivityData {
-    party: Option<(u32, u32)>,
+    party: Option<(String, u32, u32)>,
     details: String,
     state: String,
     large_image: Option<String>,

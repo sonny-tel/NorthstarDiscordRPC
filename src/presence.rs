@@ -142,6 +142,7 @@ fn on_presence_updated(
         }
         GameState::Lobby => {
             activity.party = Some((
+                "fish".to_string(),
                 cl_presence.current_players.try_into().unwrap_or_default(),
                 cl_presence.max_players.try_into().unwrap_or_default(),
             ));
@@ -162,6 +163,7 @@ fn on_presence_updated(
             let map_displayname = cl_presence.map_displayname.clone();
 
             activity.party = Some((
+                "fish".to_string(),
                 cl_presence.current_players.try_into().unwrap_or_default(),
                 cl_presence.max_players.try_into().unwrap_or_default(),
             ));
