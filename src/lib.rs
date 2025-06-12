@@ -89,7 +89,6 @@ impl Plugin for DiscordRpcPlugin {
             _dll_ptr: &DLLPointer,
             _engine_token: EngineToken,
         ) {
-        log::info!("Discord RPC plugin loaded successfully!");
             unsafe { EngineFunctions::try_init(_dll_ptr, &ENGINE_FUNCTIONS) };
 
     }
