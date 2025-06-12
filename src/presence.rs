@@ -119,16 +119,19 @@ fn on_presence_updated(
         activity.last_state = ui_presence.game_state;
     }
 
-    let party_id = {
-        if (ui_presence.game_state == GameState::InGame || ui_presence.game_state == GameState::Lobby) {
-            if ui_presence.in_party {
-                activity.match_id.clone()
-            } else {
-                activity.server_address.clone()
-            }
+    let match_id_none = activity.match_id.as_ref().map_or(true, |s| s.is_empty());
+    let server_address_none = activity.server_address.as_ref().map_or(true, |s| s.is_empty());
+
+    let party_id = if ui_presence.game_state == GameState::InGame || ui_presence.game_state == GameState::Lobby {
+        if !match_id_none {
+            activity.match_id.clone()
+        } else if !server_address_none && match_id_none {
+            activity.server_address.clone()
         } else {
             None
         }
+    } else {
+        None
     };
 
     match ui_presence.game_state {
@@ -153,13 +156,23 @@ fn on_presence_updated(
             activity.end = None;
         }
         GameState::Lobby => {
+            if ui_presence.in_party {
             activity.party = Some((
                 party_id.unwrap_or_default(),
                 cl_presence.current_players.try_into().unwrap_or_default(),
                 cl_presence.max_players.try_into().unwrap_or_default(),
             ));
+            } else {
+                party_id.unwrap_or_default(),
+                cl_presence.current_players.try_into().unwrap_or_default(),
+                cl_presence.max_players.try_into().unwrap_or_default(),
+            }
             activity.details = "Lobby".to_string();
-            activity.state = "In the Lobby".to_string();
+            if uipresence.in_party {
+                activity.details = "Playing in a Party".to_string();
+            } else {
+                activity.details = "In the Lobby".to_string();
+            }
             activity.large_image = Some("titanfallbig".to_string());
             activity.large_text = Some("Titanfall 2".to_string());
             if cl_presence.is_vanilla {
