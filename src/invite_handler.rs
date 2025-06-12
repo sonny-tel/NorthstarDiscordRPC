@@ -153,7 +153,7 @@ pub fn set_secret(is_lobby: bool) -> Result<(), String> {
         trimmed.to_string()
     };
 
-    // log::info!("Setting join secret: {}, match: {}, ip: {}", secret, match_id, ip);
+    //log::info!("Setting join secret: {}, match: {}, ip: {}", secret, match_id, ip);
 
     invite_handler.set_secret(
         std::ffi::CString

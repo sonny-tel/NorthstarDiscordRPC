@@ -72,6 +72,8 @@ offset_functions! {
         cbuf_execute = unsafe extern "C" fn() where offset(0x1204B0);
         get_base_local_client = unsafe extern "C" fn() -> *mut c_void where offset(0x78200);
         net_local_adr = *mut NetAdrT where offset(0x13FA38A0);
+        net_getudpport = unsafe extern "C" fn(*const c_void) -> u16 where offset(0x21A4B0);
+        sv_socket = *const c_void where offset(0x12A53D4C);
     }
 }
 
@@ -113,7 +115,13 @@ pub fn GetAddress() -> Option<String> {
     let port = ns_addr.port;
 
     let ip_str = match addr_type {
-        NetAdrType::Loopback => "loopback".to_string(),
+        NetAdrType::Loopback => {
+            let sv_socket = unsafe { ENGINE_FUNCTIONS.wait().sv_socket };
+            let local_port = unsafe { (ENGINE_FUNCTIONS.wait().net_getudpport)(sv_socket) };
+            let local_adr = unsafe { ENGINE_FUNCTIONS.wait().net_local_adr };
+            let local_ip = unsafe { std::ptr::read_unaligned(local_adr) };
+            format!("{}.{}.{}.{}:{}", local_ip.ip[12], local_ip.ip[13], local_ip.ip[14], local_ip.ip[15], local_port)
+        }
         NetAdrType::Ip => {
             // byte order here is probably wrong
             format!("{}.{}.{}.{}:{}", ip[12], ip[13], ip[14], ip[15], port)
