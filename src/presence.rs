@@ -156,22 +156,17 @@ fn on_presence_updated(
             activity.end = None;
         }
         GameState::Lobby => {
-            if ui_presence.in_party {
             activity.party = Some((
                 party_id.unwrap_or_default(),
-                cl_presence.current_players.try_into().unwrap_or_default(),
-                cl_presence.max_players.try_into().unwrap_or_default(),
+                ui_presence.party_size.try_into().unwrap_or_default(),
+                ui_presence.party_max_players.try_into().unwrap_or_default(),
             ));
-            } else {
-                party_id.unwrap_or_default(),
-                cl_presence.current_players.try_into().unwrap_or_default(),
-                cl_presence.max_players.try_into().unwrap_or_default(),
-            }
+
             activity.details = "Lobby".to_string();
-            if uipresence.in_party {
-                activity.details = "Playing in a Party".to_string();
+            if ui_presence.in_party {
+                activity.state = "In a Party".to_string();
             } else {
-                activity.details = "In the Lobby".to_string();
+                activity.state = "In the Lobby".to_string();
             }
             activity.large_image = Some("titanfallbig".to_string());
             activity.large_text = Some("Titanfall 2".to_string());
@@ -192,6 +187,7 @@ fn on_presence_updated(
                 cl_presence.current_players.try_into().unwrap_or_default(),
                 cl_presence.max_players.try_into().unwrap_or_default(),
             ));
+
             map_displayname.clone_into(&mut activity.details);
             map_displayname.clone_into(&mut activity.state);
             activity.large_image = Some(cl_presence.map.clone());

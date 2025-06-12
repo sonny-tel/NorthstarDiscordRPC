@@ -41,6 +41,8 @@ pub struct UIPresenceStruct {
     pub game_state: GameState,
     pub is_vanilla: bool,
     pub in_party: bool,
+    pub party_size: i32,
+    pub party_max_players: i32,
 }
 
 impl Default for GameState {
