@@ -75,12 +75,14 @@ pub async fn async_main() {
             activity_builder = activity_builder.end_timestamp(end);
         }
         if let Some(party) = data.party {
-            activity_builder = activity_builder.party(
-                party.0.clone(),
-                Some(party.1.try_into().unwrap_or(NonZeroU32::new(1).unwrap())),
-                Some(party.2.try_into().unwrap_or(NonZeroU32::new(1).unwrap())),
-                PartyPrivacy::Private
-            );
+            if !party.0.is_empty() {
+                activity_builder = activity_builder.party(
+                    party.0.clone(),
+                    Some(party.1.try_into().unwrap_or(NonZeroU32::new(1).unwrap())),
+                    Some(party.2.try_into().unwrap_or(NonZeroU32::new(1).unwrap())),
+                    PartyPrivacy::Private
+                );
+            } 
         }
 
         // updates presence here

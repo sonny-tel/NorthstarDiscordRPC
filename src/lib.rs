@@ -35,6 +35,8 @@ pub struct ActivityData {
     start: Option<i64>,
     last_state: GameState,
     secrets: Secrets,
+    match_id: Option<String>,
+    server_address: Option<String>,
 }
 
 #[deny(non_snake_case)]

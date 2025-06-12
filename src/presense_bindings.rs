@@ -40,6 +40,7 @@ pub struct GameStateStruct {
 pub struct UIPresenceStruct {
     pub game_state: GameState,
     pub is_vanilla: bool,
+    pub in_party: bool,
 }
 
 impl Default for GameState {

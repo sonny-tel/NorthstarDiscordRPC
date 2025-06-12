@@ -48,8 +48,12 @@ impl InviteHandler {
     }
 
     /// sets a secret for party which will be provided to everyone that joins the party
-    pub fn set_secret(&self, secret: *const c_char, ip: *const c_char) -> IniviteHandlerResult {
+    pub fn set_secret(&self, secret: *const c_char, match_id: *const c_char, ip: *const c_char) -> IniviteHandlerResult {
         if secret.is_null() {
+            return IniviteHandlerResult::NullSecret;
+        }
+
+        if match_id.is_null() {
             return IniviteHandlerResult::NullSecret;
         }
 
@@ -61,21 +65,31 @@ impl InviteHandler {
             return IniviteHandlerResult::NonUtf8Secret;
         };
 
+        let Some(match_id) = (unsafe { CStr::from_ptr(match_id) }).to_str().ok() else {
+            return IniviteHandlerResult::NonUtf8Secret;
+        };
+
         let Some(ip) = (unsafe { CStr::from_ptr(ip) }).to_str().ok() else {
             return IniviteHandlerResult::NonUtf8Secret;
         };
 
-        PLUGIN.wait().activity.lock().secrets.join = Some(secret.to_string());
+        let activity = &mut PLUGIN.wait().activity.lock();
+        activity.secrets.join = Some(secret.to_string());
+        activity.match_id = Some(match_id.to_string());
+        activity.server_address = Some(ip.to_string());
+
         IniviteHandlerResult::Ok
     }
 
     /// removes the secret which destroys the party invite
     pub fn clear_secret(&self) {
-        let secrets = &mut PLUGIN.wait().activity.lock().secrets;
+        let activity = &mut PLUGIN.wait().activity.lock();
 
-        secrets.r#match = None;
-        secrets.join = None;
-        secrets.spectate = None;
+        activity.match_id = None;
+        activity.server_address = None;
+        activity.secrets.r#match = None;
+        activity.secrets.join = None;
+        activity.secrets.spectate = None;
     }
 }
 
@@ -132,26 +146,14 @@ pub fn set_secret(is_lobby: bool) -> Result<(), String> {
 
         format!("v:{}", cvar_match_partysub.get_value_string())
     };
-    
-    let sqvm = SQVM_UI
-        .get(unsafe { EngineToken::new_unchecked() })
-        .borrow();
-    if let Some(sqvm) = sqvm.as_ref() {
-        call_sq_function!(
-            *sqvm,
-            SQFUNCTIONS.client.wait(),
-            "IsLobby",
-        )
-        .unwrap_or_default();
-    }
 
-    let match_id = if is_lobby {
-        cvar_match_partysub.get_value_string()
-    } else {
-        ip.clone()
+    let match_id = {
+        let party_sub = cvar_match_partysub.get_value_string();
+        let trimmed = party_sub.rsplitn(2, '_').nth(1).unwrap_or(&party_sub);
+        trimmed.to_string()
     };
 
-    // log::info!("Setting join secret: {}, match: {}", secret, match_id);
+    // log::info!("Setting join secret: {}, match: {}, ip: {}", secret, match_id, ip);
 
     invite_handler.set_secret(
         std::ffi::CString
@@ -161,6 +163,10 @@ pub fn set_secret(is_lobby: bool) -> Result<(), String> {
         std::ffi::CString
             ::new(match_id)
             .map_err(|_| "Failed to convert match_id to CString".to_string())?
+            .as_ptr(),
+        std::ffi::CString
+            ::new(ip)
+            .map_err(|_| "Failed to convert ip to CString".to_string())?
             .as_ptr(),
     );
 

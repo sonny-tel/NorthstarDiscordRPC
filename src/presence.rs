@@ -119,6 +119,18 @@ fn on_presence_updated(
         activity.last_state = ui_presence.game_state;
     }
 
+    let party_id = {
+        if (ui_presence.game_state == GameState::InGame || ui_presence.game_state == GameState::Lobby) {
+            if ui_presence.in_party {
+                activity.match_id.clone()
+            } else {
+                activity.server_address.clone()
+            }
+        } else {
+            None
+        }
+    };
+
     match ui_presence.game_state {
         GameState::Loading => {
             activity.party = None;
@@ -142,7 +154,7 @@ fn on_presence_updated(
         }
         GameState::Lobby => {
             activity.party = Some((
-                "fish".to_string(),
+                party_id.unwrap_or_default(),
                 cl_presence.current_players.try_into().unwrap_or_default(),
                 cl_presence.max_players.try_into().unwrap_or_default(),
             ));
@@ -163,7 +175,7 @@ fn on_presence_updated(
             let map_displayname = cl_presence.map_displayname.clone();
 
             activity.party = Some((
-                "fish".to_string(),
+                party_id.unwrap_or_default(),
                 cl_presence.current_players.try_into().unwrap_or_default(),
                 cl_presence.max_players.try_into().unwrap_or_default(),
             ));
