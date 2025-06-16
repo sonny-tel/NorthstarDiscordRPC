@@ -116,11 +116,12 @@ pub fn GetAddress() -> Option<String> {
 
     let ip_str = match addr_type {
         NetAdrType::Loopback => {
-            let sv_socket = unsafe { ENGINE_FUNCTIONS.wait().sv_socket };
-            let local_port = unsafe { (ENGINE_FUNCTIONS.wait().net_getudpport)(sv_socket) };
-            let local_adr = unsafe { ENGINE_FUNCTIONS.wait().net_local_adr };
-            let local_ip = unsafe { std::ptr::read_unaligned(local_adr) };
-            format!("{}.{}.{}.{}:{}", local_ip.ip[12], local_ip.ip[13], local_ip.ip[14], local_ip.ip[15], local_port)
+            // let sv_socket = unsafe { ENGINE_FUNCTIONS.wait().sv_socket };
+            // let local_port = unsafe { (ENGINE_FUNCTIONS.wait().net_getudpport)(sv_socket) };
+            // let local_adr = unsafe { ENGINE_FUNCTIONS.wait().net_local_adr };
+            // let local_ip = unsafe { std::ptr::read_unaligned(local_adr) };
+            // format!("{}.{}.{}.{}:{}", local_ip.ip[12], local_ip.ip[13], local_ip.ip[14], local_ip.ip[15], local_port)
+            "loopback".to_string()
         }
         NetAdrType::Ip => {
             // byte order here is probably wrong

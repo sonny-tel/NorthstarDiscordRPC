@@ -104,6 +104,7 @@ pub fn clear_secret() -> Result<(), String> {
     Ok(())
 }
 
+// need to eventually handle loopback here for listen servers, maybe even a port scan to check if it's port-forwarded properly
 #[rrplug::sqfunction(VM = "UI", ExportName = "SetJoinSecret")]
 pub fn set_secret(is_lobby: bool) -> Result<(), String> {
     let plugin = crate::PLUGIN.wait();
@@ -116,15 +117,15 @@ pub fn set_secret(is_lobby: bool) -> Result<(), String> {
     };
 
     match ip.as_str() {
-        // need to use net_local_adr here in the future
+        // need to use net_local_adr here in the future and get the socket port properly
         "loopback" =>
-            return Err("Cannot set join secret for loopback address".to_string()),
+            return Ok(()),//Err("Cannot set join secret for loopback address".to_string()),
         "unknown" =>
             return Err("Cannot set join secret for unknown address".to_string()),
         _ => {}
     }
 
-    let cvar_serverfilter = ConVarStruct::find_convar_by_name("serverfilter", engine_token)
+    let cvar_serverfilter = ConVarStruct::find_convar_by_name("serverFilter", engine_token)
         .map_err(|_| "Failed to find serverfilter convar".to_string())?;
     let cvar_match_partysub = ConVarStruct::find_convar_by_name("match_partySub", engine_token)
         .map_err(|_| "Failed to find match_partySub convar".to_string())?;
@@ -135,13 +136,13 @@ pub fn set_secret(is_lobby: bool) -> Result<(), String> {
             .map_err(|_| "Failed to find ns_last_tried_server_id convar".to_string())?;
         let server_id = cvar_ns_last_tried_server_id.get_value_string();
         if server_id.is_empty() {
-            return Err("No server ID found".to_string());
-        }
-
-        format!("n:{}", server_id)
+            format!("l:{}", "loopback")
+        } else {
+            format!("n:{}", server_id)
+        } 
     } else {
-        if cvar_match_partysub.get_value_string().is_empty() {
-            return Err("No party sub found".to_string());
+        if cvar_match_partysub.get_value_string().is_empty() && ip != "loopback" {
+            return Ok(());
         }
 
         format!("v:{}", cvar_match_partysub.get_value_string())
